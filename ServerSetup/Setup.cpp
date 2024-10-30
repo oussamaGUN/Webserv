@@ -1,22 +1,12 @@
-#include  <iostream>
+#include "Setup.hpp"
 
-#include <cstring>
-#include <iostream>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-using namespace std;
-
-int main()
+void ServerSetup()
 {
     // creating socket
     /*
         - domain AF_INET: Specifies the communication domain or protocol family in this case IPv4
         - type SOCK_STREAM: 
-            - Specifies the type of socket, which defines theå communication semantics.
+            - Specifies the type of socket, which defines the communication semantics.
             in this case we use SOCK_STREAM For a reliable, connection-oriented byte stream, typically used with TCP.
         - protocol 0: Setting protocol to 0 allows the system to choose the default protocol that matches domain and type in this case it use TCP
      */
@@ -89,7 +79,4 @@ int main()
     // Close the socket
     close(clientSocket);
     close(serverSocket);
-
-
-    return 0;
 }

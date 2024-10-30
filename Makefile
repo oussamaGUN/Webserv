@@ -2,22 +2,24 @@ NAME=webserv
 
 CPPFLAGS= -Wall -Wextra -Werror -std=c++98
 
-SRCS = main.cpp Connection.cpp HttpRequest.cpp HttpResponse.cpp HttpMessage.cpp Route.cpp Server.cpp WebServers.cpp 
+SRCS = main.cpp  ServerSetup/Setup.cpp
 
 CXX = c++
 
-OBJ = $(SRSC:.cpp=.o)
+OBJS = $(SRCS:.cpp=.o)
 
 all: $(NAME)
 
-$(NAME): $(OBJ)
-	$(CXX) $(CPPFLAGS) $(OBJ) -o $(NAME)
+$(NAME): $(OBJS)
+	$(CXX) $(CPPFLAGS) $(OBJS) -o $(NAME)
+
+
 
 fclean: clean
 	rm -f $(NAME)
 
 clean:
-	rm -f $(OBJ)
+	rm -f $(OBJS)
 
 re: fclean all
 
