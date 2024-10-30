@@ -1,6 +1,6 @@
 #include "Setup.hpp"
 
-#define MAX_CLIENTS 3
+#define MAX_CLIENTS 6
 void ServerSetup()
 {
 
@@ -70,6 +70,10 @@ void ServerSetup()
 
 
     /*
+        Create an array of pollfd structures to monitor multiple socket connections:
+        - fds[0] is reserved for the server socket that accepts new connections
+        - The remaining slots (1 to MAX_CLIENTS) will store client connections
+        - POLLIN event means we want to monitor for incoming data
     */
     struct pollfd fds[MAX_CLIENTS + 1]; // Array of pollfd structs
     fds[0].fd = serverSocket;
@@ -98,6 +102,7 @@ void ServerSetup()
             printf("Timeout occurred! No data for 5 seconds.\n");
         }
 
+        // detecing when a clients disconnect and closeing sokcects
         for (int i = 1; i < numberOfFileDiscriptorsInFds; i++) {
             // POLLHUP: Client closed connection (hung up)
             // POLLERR: Error occurred on socket
@@ -152,7 +157,8 @@ void ServerSetup()
             "Connection: close\r\n"
             "\r\n"
             "Connection OK!";
-        send(clientSocket, httpResponse, strlen(httpResponse), 0);
+        if (numberOfFileDiscriptorsInFds != MAX_CLIENTS)
+            send(clientSocket, httpResponse, strlen(httpResponse), 0);
         
     }
 
