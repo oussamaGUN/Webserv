@@ -4,4 +4,5 @@
 int main()
 {
     ServerSetup();
+    return 0;
 }
