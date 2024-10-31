@@ -1,6 +1,6 @@
 #include "Setup.hpp"
 
-#define MAX_CLIENTS 6
+#define MAX_CLIENTS 5
 void ServerSetup()
 {
 
@@ -17,6 +17,24 @@ void ServerSetup()
         std::cout << "The socket not opened\n";
     else
         std::cout << "sockect opened successfully\n";
+
+    // set the socket option to reuse the address
+    /*
+        - The setsockopt() function allows you to modify a socket's behavior, enabling you to decide how it handles different network conditions
+        - SOL_SOCKET: The level argument specifies the protocol level at which the option resides.
+            in this case SOL_SOCKET is used to manipulate options at the socket level.
+        - The SO_REUSEADDR socket option forces the kernel to reuse a local socket in TIME_WAIT state without waiting for its natural timeout to expire. 
+            This is useful when a server needs to be restarted and the previous socket is still in the TIME_WAIT state, preventing the server from binding to the port.
+        - opt: The value argument points to a buffer containing the value for the requested option.
+        - sizeof(opt): this argement has diffrent roles according to the type of the option in this case it turn on the option and it option will start binding to the port
+            because it might be a struct or a simple data type
+    */
+    int opt = 1;
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
+        std::cerr << "Failed to set SO_REUSEADDR\n";
+        close(serverSocket);
+        exit(EXIT_FAILURE);
+    }
 
     // initilize the environment for the sockaddr struct
     /*
@@ -48,6 +66,7 @@ void ServerSetup()
 
     // Tell a socket to listen for incoming connections
     /*
+        - listen() is used on the server side to make a socket ready to accept incoming connections.
         - The second parameter means how many pending connections you can have before the kernel starts rejecting new ones
     */
     if (listen(serverSocket, 5) < 0)
@@ -57,8 +76,6 @@ void ServerSetup()
     }
     else
         std::cout << "successfully listen for connection\n";
-
-
     /*
         The fcntl system call in Unix-based systems is used to manipulate file descriptors in this case we try to manupilate an open file discripotr to be non-blocking
         - first argument: The file descriptor you want to modify.
@@ -82,9 +99,9 @@ void ServerSetup()
 
     int clientSocket;
     int numberOfFileDiscriptorsInFds = 1;
-    /*
-        an infinit loop that iterate through each client socket
-    */
+    int numberOfClients = 0;
+    int timewaitIndex = 0;
+    // an infinit loop to keep the server running
     while (1)
     {
         /*
@@ -100,6 +117,10 @@ void ServerSetup()
             exit(1);
         } else if (poll_fd == 0) {
             printf("Timeout occurred! No data for 5 seconds.\n");
+            timewaitIndex++;
+            if (timewaitIndex == 3) {
+                break;
+            }
         }
 
         // detecing when a clients disconnect and closeing sokcects
@@ -108,6 +129,7 @@ void ServerSetup()
             // POLLERR: Error occurred on socket
             // POLLNVAL: Invalid socket descriptor
             if (fds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
+                std::cout << "Client" << " disconnected -_-\n";
                 // Connection closed by client
                 close(fds[i].fd);
                 // Remove this fd by shifting array
@@ -119,9 +141,8 @@ void ServerSetup()
             }
         }
 
-        // // Check if the server socket has an incoming connection 
+        // Check if the server socket has an incoming connection 
         if (fds[0].revents & POLLIN) {
-            printf("Data is available to read from stdin.\n");
             // accepting connection request
             /*
                 - The accept() function shall extract the first connection on the queue of pending connections, 
@@ -134,37 +155,33 @@ void ServerSetup()
                 std::cout << "fail to accept connection\n";
                 continue;
             }
-            else
-                std::cout << "successfully connected\n";
+            numberOfClients++;
+            timewaitIndex = 0;
+            // filling the fds struct with new pending connetion (client socket)
+            if (numberOfFileDiscriptorsInFds < MAX_CLIENTS)
+            {
+                fds[numberOfFileDiscriptorsInFds].fd = clientSocket;
+                fds[numberOfFileDiscriptorsInFds].events = POLLIN;
+                numberOfFileDiscriptorsInFds++;
+            } else {
+                std::cout << "has reached the max elements" << std::endl;
+                break;
+            }
+            // Set client socket to non-blocking mode
+            fcntl(clientSocket, F_SETFL, O_NONBLOCK);
+            // recieving data
+            const char* httpResponse = 
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Length: 13\r\n"
+                "Connection: close\r\n"
+                "\r\n"
+                "Connection OK!";
+            send(clientSocket, httpResponse, strlen(httpResponse), 0);
+            std::cout << "sent response to client " << numberOfClients << std::endl;
         }
 
-        // filling the fds struct with new pending connetion (client socket)
-        if (numberOfFileDiscriptorsInFds < MAX_CLIENTS)
-        {
-            fds[numberOfFileDiscriptorsInFds].fd = clientSocket;
-            fds[numberOfFileDiscriptorsInFds].events = POLLIN;
-            numberOfFileDiscriptorsInFds++;
-        } else {
-            std::cout << "has reached the max elements" << std::endl;
-            break;
-        }
-        // Set client socket to non-blocking mode
-        fcntl(clientSocket, F_SETFL, O_NONBLOCK);
-        // recieving data
-        const char* httpResponse = 
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Length: 13\r\n"
-            "Connection: close\r\n"
-            "\r\n"
-            "Connection OK!";
-        if (numberOfFileDiscriptorsInFds != MAX_CLIENTS)
-            send(clientSocket, httpResponse, strlen(httpResponse), 0);
         
     }
-
-
-
-
     // Close the socket
     for (int i = 1; i < numberOfFileDiscriptorsInFds; i++) {
         if (fds[i].revents & (POLLHUP | POLLERR)) {
