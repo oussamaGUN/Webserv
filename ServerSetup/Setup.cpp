@@ -46,8 +46,8 @@ void ServerSetup()
     */
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(8080);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    serverAddress.sin_port = htons(8080); // htons() is used to convert a 16-bit integer from host byte order to network byte order
+    serverAddress.sin_addr.s_addr = INADDR_ANY; // INADDR_ANY allows the server to accept connections on any network interface
     
 
     // binding socket.
@@ -109,7 +109,7 @@ void ServerSetup()
             to see if they are ready for reading, writing, or have encountered an error.
                 - pointer to an array of struct pollfd which defines the file descriptors to be moitored and the events to check for each
                 - this is the number of elements in the fds array
-                - time to wait in milliseconds
+                - timeout in milliseconds
         */
         int poll_fd = poll(fds, numberOfFileDiscriptorsInFds, 5000);
         if (poll_fd == -1) {
@@ -119,6 +119,7 @@ void ServerSetup()
             printf("Timeout occurred! No data for 5 seconds.\n");
             timewaitIndex++;
             if (timewaitIndex == 3) {
+                std::cout << "Server is shutting down\n";
                 break;
             }
         }
@@ -179,8 +180,6 @@ void ServerSetup()
             send(clientSocket, httpResponse, strlen(httpResponse), 0);
             std::cout << "sent response to client " << numberOfClients << std::endl;
         }
-
-        
     }
     // Close the socket
     for (int i = 1; i < numberOfFileDiscriptorsInFds; i++) {
