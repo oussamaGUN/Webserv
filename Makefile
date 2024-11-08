@@ -1,25 +1,23 @@
 NAME=webserv
 
-CPPFLAGS= -Wall -Wextra -Werror -std=c++98
+CPPFLAGS= -Wall -Wextra -Werror -std=c++98 -g
 
-SRCS = main.cpp  ServerSetup/Setup.cpp
+SRCS = main.cpp ParsingConfig/ParsingConfig.cpp Server/Server.cpp Route/Route.cpp WebServers/Webservers.cpp serverSetup/ServerSetup.cpp # Connection.cpp HttpRequest.cpp HttpResponse.cpp HttpMessage.cpp WebServers.cpp 
 
 CXX = c++
 
-OBJS = $(SRCS:.cpp=.o)
+OBJ = $(SRCS:.cpp=.o)
 
 all: $(NAME)
 
-$(NAME): $(OBJS)
-	$(CXX) $(CPPFLAGS) $(OBJS) -o $(NAME)
-
-
+$(NAME): $(OBJ)
+	$(CXX) $(CPPFLAGS) $(OBJ) -o $(NAME)
 
 fclean: clean
 	rm -f $(NAME)
 
 clean:
-	rm -f $(OBJS)
+	rm -f $(OBJ)
 
 re: fclean all
 

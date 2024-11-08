@@ -1,8 +1,13 @@
-// #include "WebServers.hpp"
-#include "ServerSetup/Setup.hpp"
+#include "WebServers/Webservers.hpp"
+#include "serverSetup/ServerSetup.hpp"
+#include "ParsingConfig/ParsingConfig.hpp"
 
-int main()
+int main(int ac, char **av)
 {
-    ServerSetup();
-    return 0;
+    ParsingConfig Config;
+    if (ac != 2)
+            return 1;
+    Config = parsingConfig(av[1]);
+
+    ServerSetup(Config);
 }
